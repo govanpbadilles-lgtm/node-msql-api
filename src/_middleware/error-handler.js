@@ -1,17 +1,15 @@
-import { Request, Response, NextFunction } from 'express';
-
-export default function errorHandler(err: any, req: Request, res: Response, next: NextFunction) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = errorHandler;
+function errorHandler(err, req, res, next) {
     switch (true) {
         case typeof err === 'string':
-            // custom application error
             const is404 = err.toLowerCase().endsWith('not found');
             const statusCode = is404 ? 404 : 400;
             return res.status(statusCode).json({ message: err });
         case err.name === 'UnauthorizedError':
-            // jwt authentication error
-            return res.status(401).json({ message: 'Unauthorized' });
+            return res.status(401).json({ message: 'Unauthorized: ' + err.message });
         default:
-            // default to 500 server error
             return res.status(500).json({ message: err.message });
     }
 }

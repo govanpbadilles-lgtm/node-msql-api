@@ -1,17 +1,17 @@
-export default validateRequest;
-
-function validateRequest(req: any, next: any, schema: any) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = validateRequest;
+function validateRequest(req, next, schema) {
     const options = {
         abortEarly: false, // include all errors
         allowUnknown: true, // ignore unknown props
         stripUnknown: true // remove unknown props
     };
-    
     const { error, value } = schema.validate(req.body, options);
-    
     if (error) {
-        next(`Validation error: ${error.details.map((x: any) => x.message).join(', ')}`);
-    } else {
+        next(`Validation error: ${error.details.map(x => x.message).join(', ')}`);
+    }
+    else {
         req.body = value;
         next();
     }

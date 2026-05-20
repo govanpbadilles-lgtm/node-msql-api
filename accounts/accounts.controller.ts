@@ -42,7 +42,9 @@ function authenticate(req: any, res: any, next: any) {
 }
 
 function refreshToken(req: any, res: any, next: any) {
-    const token = req.cookies.refreshToken;
+    const token = req.body.token || req.cookies.refreshToken;
+    if (!token) return res.status(400).json({ message: 'Token is required' });
+
     const ipAddress = req.ip;
     accountService.refreshToken({ token, ipAddress })
         .then(({ refreshToken, ...account }: any) => {
@@ -89,11 +91,13 @@ function registerSchema(req: any, res: any, next: any) {
 
 function register(req: any, res: any, next: any) {
     accountService.register(req.body, req.get('origin'))
-        .then(() => res.json({ message: 'Registration successful, please check your email for verification instructions' }))
+        .then(() => res.json(
+            { message: 'Registration successful, please check your email for verification instructions' }))
         .catch(next);
 }
 
 function verifyEmailSchema(req: any, res: any, next: any) {
+    if (!req.body.token && req.query.token) req.body.token = req.query.token;
     const schema = Joi.object({
         token: Joi.string().required()
     });
@@ -120,6 +124,7 @@ function forgotPassword(req: any, res: any, next: any) {
 }
 
 function validateResetTokenSchema(req: any, res: any, next: any) {
+    if (!req.body.token && req.query.token) req.body.token = req.query.token;
     const schema = Joi.object({
         token: Joi.string().required()
     });
@@ -133,6 +138,7 @@ function validateResetToken(req: any, res: any, next: any) {
 }
 
 function resetPasswordSchema(req: any, res: any, next: any) {
+    if (!req.body.token && req.query.token) req.body.token = req.query.token;
     const schema = Joi.object({
         token: Joi.string().required(),
         password: Joi.string().min(6).required(),
@@ -181,7 +187,6 @@ function create(req: any, res: any, next: any) {
         .then((account: any) => res.json(account))
         .catch(next);
 }
-
 function updateSchema(req: any, res: any, next: any) {
     const schemaRules: any = {
         title: Joi.string().empty(''),
@@ -191,11 +196,9 @@ function updateSchema(req: any, res: any, next: any) {
         password: Joi.string().min(6).empty(''),
         confirmPassword: Joi.string().valid(Joi.ref('password')).empty('')
     };
-
     if (req.user.role === Role.Admin) {
         schemaRules.role = Joi.string().valid(Role.Admin, Role.User).empty('');
     }
-
     const schema = Joi.object(schemaRules).with('password', 'confirmPassword');
     validateRequest(req, next, schema);
 }
@@ -214,16 +217,18 @@ function _delete(req: any, res: any, next: any) {
     if (Number(req.params.id) !== req.user.id && req.user.role !== Role.Admin) {
         return res.status(401).json({ message: 'Unauthorized' });
     }
-
     accountService.delete(req.params.id)
         .then(() => res.json({ message: 'Account deleted successfully' }))
         .catch(next);
 }
 
 function setTokenCookie(res: any, token: any) {
+    const isProduction = process.env.NODE_ENV === 'production';
     const cookieOptions = {
         httpOnly: true,
-        expires: new Date(Date.now() + 7*24*60*60*1000)
+        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax'
     };
     res.cookie('refreshToken', token, cookieOptions);
 }

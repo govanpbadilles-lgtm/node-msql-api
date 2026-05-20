@@ -1,8 +1,8 @@
-import { expressjwt } from 'express-jwt';
-import config from '../../config.json';
+import { expressjwt as jwt } from 'express-jwt';
+import config from '../config';
 import db from '../_helpers/db';
 
-const { secret } = config;
+const secret = config.secret;
 
 export default function authorize(roles: any = []) {
     if (typeof roles === 'string') {
@@ -10,8 +10,7 @@ export default function authorize(roles: any = []) {
     }
 
     return [
-        
-        expressjwt({ secret, algorithms: ['HS256'], requestProperty: 'user' }),
+        jwt({ secret, algorithms: ['HS256'], requestProperty: 'user' }),
         async (req: any, res: any, next: any) => {
             const account = await db.Account.findByPk(req.user.id);
 
@@ -20,8 +19,10 @@ export default function authorize(roles: any = []) {
             }
 
             req.user.role = account.role;
-            const refreshTokens = await account.getRefreshTokens();
-            req.user.ownsToken = (token: any) => !!refreshTokens.find((x: any) => x.token === token);
+            const refreshTokens = await db.RefreshToken.findAll(
+                { where: { accountId: account.id } });
+            req.user.ownsToken = (token: any) => !!refreshTokens.find(
+                (x: any) => x.token === token);
             next();
         }
     ];

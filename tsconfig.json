@@ -12,6 +12,6 @@
     "forceConsistentCasingInFileNames": true,
     "ignoreDeprecations": "6.0"
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "_helpers", "_middleware", "accounts"],
   "exclude": ["node_modules"]
 }
