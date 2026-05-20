@@ -11,8 +11,8 @@ async function sendEmail({ to, subject, html, from = config_1.default.emailFrom 
     const hasResend = !!process.env.RESEND_API_KEY;
     // Override 'to' address for Resend onboarding restrictions
     if (hasResend && from === 'onboarding@resend.dev') {
-        console.log(`Resend onboarding restriction: Overriding recipient from ${to} to bryllandomarecigan@gmail.com`);
-        to = 'bryllandomarecigan@gmail.com';
+        console.log(`Resend onboarding restriction: Overriding recipient from ${to} to govanpbadilles@gmail.com`);
+        to = 'govanpbadilles@gmail.com.com';
     }
     if (hasResend) {
         return await sendWithResend({ to, subject, html, from });
