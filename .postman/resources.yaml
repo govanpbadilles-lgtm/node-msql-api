@@ -4,4 +4,4 @@ workspace:
 
 localResources:
   specs:
-    - ..\api-docs\swagger.yaml
+    - .\swagger.yaml
