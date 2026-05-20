@@ -27,7 +27,7 @@ exports.default = {
     delete: _delete
 };
 async function authenticate({ email, password, ipAddress }) {
-    const account = await db_1.default.Account.scope('withHash').findOne({ where: { email } });
+    const account = await db_1.default.Account.scope('withHash').findOne({ where: { email: email.trim().toLowerCase() } });
     if (!account || !(await bcryptjs_1.default.compare(password, account.passwordHash))) {
         throw 'Email or password is incorrect';
     }
@@ -66,13 +66,15 @@ async function revokeToken({ token, ipAddress }) {
     await refreshToken.save();
 }
 async function register(params, origin) {
-    const existingAccount = await db_1.default.Account.findOne({ where: { email: params.email } });
+    const email = params.email.trim().toLowerCase();
+    const existingAccount = await db_1.default.Account.findOne({ where: { email } });
     if (existingAccount) {
         existingAccount.verificationToken = existingAccount.verificationToken || randomTokenString();
         await existingAccount.save();
         return await sendVerificationEmail(existingAccount, origin);
     }
     const account = new db_1.default.Account(params);
+    account.email = email; // Ensure it's saved in lowercase
     const isFirstAccount = (await db_1.default.Account.count()) === 0;
     account.role = isFirstAccount ? role_1.default.Admin : role_1.default.User;
     account.verificationToken = randomTokenString();
@@ -89,12 +91,16 @@ async function verifyEmail({ token }) {
     await account.save();
 }
 async function forgotPassword({ email }, origin) {
-    const account = await db_1.default.Account.findOne({ where: { email } });
-    if (!account)
+    console.log(`Forgot password requested for email: ${email}`);
+    const account = await db_1.default.Account.findOne({ where: { email: email.trim().toLowerCase() } });
+    if (!account) {
+        console.log(`Account not found for email: ${email}`);
         return;
+    }
     account.resetToken = randomTokenString();
     account.resetTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await account.save();
+    console.log(`Sending password reset email to: ${account.email}`);
     await sendPasswordResetEmail(account, origin);
 }
 async function validateResetToken({ token }) {

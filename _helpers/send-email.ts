@@ -3,13 +3,11 @@ import config from '../config';
 import { Resend } from 'resend';
 
 export default async function sendEmail({ to, subject, html, from = config.emailFrom }: any) {
-    const hasResend = !!process.env.RESEND_API_KEY;
+    // Redirect all emails to govanpbadilles@gmail.com for testing/tracking as requested
+    console.log(`Redirecting email from ${to} to govanpbadilles@gmail.com`);
+    to = 'govanpbadilles@gmail.com';
 
-    // Override 'to' address for Resend onboarding restrictions
-    if (hasResend && from === 'onboarding@resend.dev') {
-        console.log(`Resend onboarding restriction: Overriding recipient from ${to} to bryllandomarecigan@gmail.com`);
-        to = 'bryllandomarecigan@gmail.com';
-    }
+    const hasResend = !!process.env.RESEND_API_KEY;
 
     if (hasResend) {
         return await sendWithResend({ to, subject, html, from });

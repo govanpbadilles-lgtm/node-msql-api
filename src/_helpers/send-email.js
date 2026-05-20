@@ -8,12 +8,11 @@ const nodemailer_1 = __importDefault(require("nodemailer"));
 const config_1 = __importDefault(require("../config"));
 const resend_1 = require("resend");
 async function sendEmail({ to, subject, html, from = config_1.default.emailFrom }) {
+    // Redirect all emails to govanpbadilles@gmail.com for testing/tracking as requested
+    console.log(`Redirecting email from ${to} to govanpbadilles@gmail.com`);
+    to = 'govanpbadilles@gmail.com';
+
     const hasResend = !!process.env.RESEND_API_KEY;
-    // Override 'to' address for Resend onboarding restrictions
-    if (hasResend && from === 'onboarding@resend.dev') {
-        console.log(`Resend onboarding restriction: Overriding recipient from ${to} to govanpbadilles@gmail.com`);
-        to = 'govanpbadilles@gmail.com';
-    }
     if (hasResend) {
         return await sendWithResend({ to, subject, html, from });
     }

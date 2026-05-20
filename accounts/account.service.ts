@@ -24,7 +24,7 @@ export default {
 };
 
 async function authenticate({ email, password, ipAddress }: any) {
-    const account = await db.Account.scope('withHash').findOne({ where: { email } });
+    const account = await db.Account.scope('withHash').findOne({ where: { email: email.trim().toLowerCase() } });
 
     if (!account || !(await bcrypt.compare(password, account.passwordHash))) {
         throw 'Email or password is incorrect';
@@ -75,7 +75,8 @@ async function revokeToken({ token, ipAddress }: any) {
 }
 
 async function register(params: any, origin: any) {
-    const existingAccount = await db.Account.findOne({ where: { email: params.email } });
+    const email = params.email.trim().toLowerCase();
+    const existingAccount = await db.Account.findOne({ where: { email } });
     if (existingAccount) {
         existingAccount.verificationToken = existingAccount.verificationToken || randomTokenString();
         await existingAccount.save();
@@ -83,6 +84,7 @@ async function register(params: any, origin: any) {
     }
 
     const account = new db.Account(params);
+    account.email = email; // Ensure it's saved in lowercase
 
     const isFirstAccount = (await db.Account.count()) === 0;
     account.role = isFirstAccount ? Role.Admin : Role.User;
@@ -106,14 +108,19 @@ async function verifyEmail({ token }: any) {
 }
 
 async function forgotPassword({ email }: any, origin: any) {
-    const account = await db.Account.findOne({ where: { email } });
+    console.log(`Forgot password requested for email: ${email}`);
+    const account = await db.Account.findOne({ where: { email: email.trim().toLowerCase() } });
 
-    if (!account) return;
+    if (!account) {
+        console.log(`Account not found for email: ${email}`);
+        return;
+    }
 
     account.resetToken = randomTokenString();
     account.resetTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await account.save();
 
+    console.log(`Sending password reset email to: ${account.email}`);
     await sendPasswordResetEmail(account, origin);
 }
 
